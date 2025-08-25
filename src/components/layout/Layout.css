@@ -1,0 +1,19 @@
+.layout {
+  display: flex;
+  min-height: 100vh;
+}
+
+.main-content {
+  flex: 1;
+  margin-left: 250px;
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+.content {
+  flex: 1;
+  padding: 90px 30px 30px;
+  background: #f8f9fa;
+  min-height: calc(100vh - 70px - 200px); /* Subtract header and footer heights */
+}

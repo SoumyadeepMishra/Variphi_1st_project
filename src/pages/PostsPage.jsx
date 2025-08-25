@@ -2,12 +2,11 @@ import { useEffect, useState } from "react";
 import { getRequest, postRequest, patchRequest, deleteRequest } from "../axios/api";
 import Postcard from "../components/Postcard";
 import PostForm from "../components/PostForm";
-import { useAuth } from "../context/AuthContext";
 
 export default function PostsPage() {
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
-  const { logout } = useAuth();
+  const [showForm, setShowForm] = useState(false);
 
   useEffect(() => {
     getRequest("/posts")
@@ -18,7 +17,10 @@ export default function PostsPage() {
 
   const createPost = (newPost) => {
     postRequest("/posts", newPost)
-      .then((res) => setData((prev) => [...prev, res]))
+      .then((res) => {
+        setData((prev) => [...prev, res]);
+        setShowForm(false);
+      })
       .catch((e) => console.error("Error creating post:", e));
   };
 
@@ -31,37 +33,72 @@ export default function PostsPage() {
   };
 
   const removePost = (id) => {
-    deleteRequest(`/posts/${id}`)
-      .then(() => setData((prev) => prev.filter((p) => p.id !== id)))
-      .catch((e) => console.error("Error deleting post:", e));
+    if (window.confirm("Are you sure you want to delete this post?")) {
+      deleteRequest(`/posts/${id}`)
+        .then(() => setData((prev) => prev.filter((p) => p.id !== id)))
+        .catch((e) => console.error("Error deleting post:", e));
+    }
   };
 
-  if (loading) return <h2 style={{ textAlign: "center" }}>Loading...</h2>;
+  if (loading) {
+    return (
+      <div className="posts-loading">
+        <div className="loading-spinner"></div>
+        <p>Loading posts...</p>
+      </div>
+    );
+  }
 
   return (
-    <div style={{ padding: 20 }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12 }}>
-        <h1>Posts</h1>
-        <button onClick={logout} style={{ padding: "8px 12px", borderRadius: 8, border: "1px solid #ddd", cursor: "pointer" }}>
-          Logout
+    <div className="posts-page">
+      {/* Page Header */}
+      <div className="posts-header">
+        <div className="posts-header-content">
+          <h1>📝 My Posts</h1>
+          <p>{data.length} {data.length === 1 ? 'post' : 'posts'} • Manage your content</p>
+        </div>
+        
+        <button
+          onClick={() => setShowForm(!showForm)}
+          className={`new-post-btn ${showForm ? 'cancel' : ''}`}
+        >
+          {showForm ? "✕ Cancel" : "✏️ New Post"}
         </button>
       </div>
 
-      <PostForm onCreate={createPost} />
+      {/* Create Post Form */}
+      {showForm && (
+        <div className="post-form-container">
+          <PostForm onCreate={createPost} />
+        </div>
+      )}
 
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))",
-          gap: 20,
-          marginTop: 20,
-        }}
-      >
-        {Array.isArray(data) &&
-          data.map((item) => (
-            <Postcard key={item.id} post={item} onUpdate={updatePost} onDelete={removePost} />
-          ))}
-      </div>
+      {/* Posts Grid */}
+      {data.length === 0 ? (
+        <div className="empty-posts">
+          <div className="empty-icon">📭</div>
+          <h3>No posts yet</h3>
+          <p>Create your first post to get started!</p>
+          <button
+            onClick={() => setShowForm(true)}
+            className="create-first-post-btn"
+          >
+            ✏️ Create First Post
+          </button>
+        </div>
+      ) : (
+        <div className="posts-grid">
+          {Array.isArray(data) &&
+            data.map((item) => (
+              <Postcard 
+                key={item.id} 
+                post={item} 
+                onUpdate={updatePost} 
+                onDelete={removePost} 
+              />
+            ))}
+        </div>
+      )}
     </div>
   );
 }
